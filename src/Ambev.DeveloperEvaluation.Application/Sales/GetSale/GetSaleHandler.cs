@@ -1,34 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
-using global::Ambev.DeveloperEvaluation.Domain.Repositories;
+﻿using Ambev.DeveloperEvaluation.ORM;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
- 
 namespace Ambev.DeveloperEvaluation.Application.Sales.GetSale
 {
-   
-
     public sealed class GetSaleHandler : IRequestHandler<GetSaleQuery, GetSaleResult>
     {
-        private readonly ISaleRepository _repo;
-        private readonly IMapper _mapper;
+        private readonly DefaultContext _db;
+        public GetSaleHandler(DefaultContext db) => _db = db;
 
-        public GetSaleHandler(ISaleRepository repo, IMapper mapper)
+        public async Task<GetSaleResult?> Handle(GetSaleQuery request, CancellationToken ct)
         {
-            _repo = repo;
-            _mapper = mapper;
-        }
+            var s = await _db.Sales.Include(x => x.Items)
+                                   .AsNoTracking()
+                                   .FirstOrDefaultAsync(x => x.Id == request.Id, ct);
+            if (s is null) return null;
 
-        public async Task<GetSaleResult> Handle(GetSaleQuery request, CancellationToken ct)
-        {
-            var sale = await _repo.GetByIdAsync(request.Id, ct)
-                       ?? throw new KeyNotFoundException("Sale not found");
-            return _mapper.Map<GetSaleResult>(sale);
+            var items = s.Items.Select(i =>
+                new GetSaleItemResult(i.ProductId, i.ProductName, i.UnitPrice, i.Quantity, i.DiscountPercent, i.Total)
+            ).ToList();
+
+            return new GetSaleResult(
+                s.Id, s.Number, s.Date, s.CustomerId, s.CustomerName,
+                s.BranchId, s.BranchName, s.Cancelled, s.Total, items);
         }
     }
-
 }

@@ -1,4 +1,5 @@
 using Ambev.DeveloperEvaluation.Application;
+using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.Common.HealthChecks;
 using Ambev.DeveloperEvaluation.Common.Logging;
 using Ambev.DeveloperEvaluation.Common.Security;
@@ -36,11 +37,17 @@ public class Program
                 )
             );
 
+            builder.Services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssembly(typeof(CreateSaleHandler).Assembly);
+            });
+
             builder.Services.AddJwtAuthentication(builder.Configuration);
 
             builder.RegisterDependencies();
 
             builder.Services.AddAutoMapper(typeof(Program).Assembly, typeof(ApplicationLayer).Assembly);
+            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             builder.Services.AddMediatR(cfg =>
             {
@@ -48,9 +55,11 @@ public class Program
                     typeof(ApplicationLayer).Assembly,
                     typeof(Program).Assembly
                 );
+                cfg.RegisterServicesFromAssembly(typeof(Ambev.DeveloperEvaluation.Application.Sales.CreateSale.CreateSaleHandler).Assembly);
             });
 
             builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+            builder.Services.AddControllers().AddNewtonsoftJson();
 
             var app = builder.Build();
             app.UseMiddleware<ValidationExceptionMiddleware>();

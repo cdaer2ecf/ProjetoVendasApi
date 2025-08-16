@@ -6,33 +6,28 @@ using System.Threading.Tasks;
 
 namespace Ambev.DeveloperEvaluation.Application.Sales.GetSale
 {
-  
 
-    public sealed class GetSaleResult
-    {
-        public Guid Id { get; set; }
-        public string Number { get; set; } = string.Empty;
-        public DateTime Date { get; set; }
 
-        public Guid CustomerId { get; set; }
-        public string CustomerName { get; set; } = string.Empty;
+    public record GetSaleResult(
+       Guid Id,
+       string Number,
+       DateTime Date,
+       Guid CustomerId,
+       string CustomerName,
+       Guid BranchId,
+       string BranchName,
+       bool Cancelled,
+       decimal Total,
+       List<GetSaleItemResult> Items
+   );
 
-        public Guid BranchId { get; set; }
-        public string BranchName { get; set; } = string.Empty;
-
-        public bool Cancelled { get; set; }
-        public decimal Total { get; set; }
-        public List<GetSaleItemResult> Items { get; set; } = new();
-    }
-
-    public sealed class GetSaleItemResult
-    {
-        public Guid ProductId { get; set; }
-        public string ProductName { get; set; } = string.Empty;
-        public decimal UnitPrice { get; set; }
-        public int Quantity { get; set; }
-        public decimal DiscountPercent { get; set; }
-        public decimal Total { get; set; }
-    }
+    public record GetSaleItemResult(
+         Guid ProductId,
+         string ProductName,
+         decimal UnitPrice,
+         int Quantity,
+         decimal DiscountPercent,
+         decimal Total
+     );
 
 }

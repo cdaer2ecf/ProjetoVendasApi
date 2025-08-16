@@ -1,49 +1,44 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
-using FluentValidation;
-using global::Ambev.DeveloperEvaluation.Domain.Entities;
-using global::Ambev.DeveloperEvaluation.Domain.Repositories;
+﻿using Ambev.DeveloperEvaluation.Domain.Entities;
+using Ambev.DeveloperEvaluation.ORM;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
- 
 namespace Ambev.DeveloperEvaluation.Application.Sales.CreateSale
 {
-  
-
-    public sealed class CreateSaleHandler : IRequestHandler<CreateSaleCommand, CreateSaleResult>
+    public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, CreateSaleResult>
     {
-        private readonly ISaleRepository _repo;
-        private readonly IMapper _mapper;
-        private readonly DbContext _ctx; // usa o DefaultContext via DI
-
-        public CreateSaleHandler(ISaleRepository repo, IMapper mapper, DbContext ctx)
-        {
-            _repo = repo;
-            _mapper = mapper;
-            _ctx = ctx;
-        }
+        private readonly DefaultContext _db;
+        public CreateSaleHandler(DefaultContext db) => _db = db;
 
         public async Task<CreateSaleResult> Handle(CreateSaleCommand request, CancellationToken ct)
         {
-            new CreateSaleCommandValidator().ValidateAndThrow(request);
+            var sale = new Sale(
+                id: Guid.NewGuid(),
+                number: request.Number,
+                date: request.Date,
+                customerId: request.CustomerId,
+                customerName: request.CustomerName,
+                branchId: request.BranchId,
+                branchName: request.BranchName
+            );
 
-            var sale = _mapper.Map<Sale>(request);
-
-            foreach (var it in request.Items)
+            if (request.Items is { Count: > 0 })
             {
-                sale.AddItem(it.ProductId, it.ProductName, it.UnitPrice, it.Quantity);
+                foreach (var i in request.Items)
+                {
+                    sale.AddItem(i.ProductId, i.ProductName, i.UnitPrice, i.Quantity);
+                }
             }
 
-            await _repo.AddAsync(sale, ct);
-            await _ctx.SaveChangesAsync(ct); // simples e direto
+            await _db.Set<Sale>().AddAsync(sale, ct);
+            await _db.SaveChangesAsync(ct);
 
-            return _mapper.Map<CreateSaleResult>(sale);
+            return new CreateSaleResult
+            {
+                Id = sale.Id,
+                Number = sale.Number,
+                Total = sale.Total
+            };
         }
     }
-
 }
