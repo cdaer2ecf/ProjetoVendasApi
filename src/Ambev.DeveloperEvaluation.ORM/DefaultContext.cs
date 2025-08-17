@@ -26,19 +26,28 @@ public class YourDbContextFactory : IDesignTimeDbContextFactory<DefaultContext>
 {
     public DefaultContext CreateDbContext(string[] args)
     {
-        IConfigurationRoot configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .Build();
+        // 1) Primeiro tenta via variável de ambiente (igual seu script PS define)
+        var cs = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 
-        var builder = new DbContextOptionsBuilder<DefaultContext>();
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        // 2) Fallback: lê do appsettings do WebApi (e não do ORM)
+        if (string.IsNullOrWhiteSpace(cs))
+        {
+            var basePath = Path.Combine(Directory.GetCurrentDirectory(), "..", "Ambev.DeveloperEvaluation.WebApi");
+            var cfg = new ConfigurationBuilder()
+                .SetBasePath(basePath)
+                .AddJsonFile("appsettings.Development.json", optional: true)
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
 
-        builder.UseNpgsql(
-               connectionString,
-               b => b.MigrationsAssembly("Ambev.DeveloperEvaluation.WebApi")
-        );
+            cs = cfg.GetConnectionString("DefaultConnection");
+        }
 
-        return new DefaultContext(builder.Options);
+        var options = new DbContextOptionsBuilder<DefaultContext>()
+            // 🔴 AQUI: migrations ficam no assembly do ORM
+            .UseNpgsql(cs, npg => npg.MigrationsAssembly("Ambev.DeveloperEvaluation.ORM"))
+            .Options;
+
+        return new DefaultContext(options);
     }
 }

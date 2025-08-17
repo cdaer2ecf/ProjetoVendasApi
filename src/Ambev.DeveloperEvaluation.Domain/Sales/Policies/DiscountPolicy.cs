@@ -22,11 +22,4 @@ namespace Ambev.DeveloperEvaluation.Domain.Sales.Policies
         }
     }
 
-    /// <summary>
-    /// Exceção de domínio simples. Se seu template já tem uma DomainException, remova essa classe e use a existente.
-    /// </summary>
-    public sealed class DomainException : Exception
-    {
-        public DomainException(string message) : base(message) { }
-    }
 }

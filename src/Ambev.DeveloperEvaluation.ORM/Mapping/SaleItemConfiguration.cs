@@ -15,6 +15,7 @@ namespace Ambev.DeveloperEvaluation.ORM.Mapping
 
     public class SaleItemConfiguration : IEntityTypeConfiguration<SaleItem>
     {
+        // ORM/Mapping/SaleItemConfiguration.cs
         public void Configure(EntityTypeBuilder<SaleItem> b)
         {
             b.ToTable("saleitems");
@@ -26,15 +27,25 @@ namespace Ambev.DeveloperEvaluation.ORM.Mapping
             b.Property(x => x.ProductName).HasColumnName("ProductName").HasMaxLength(200).IsRequired();
             b.Property(x => x.Quantity).HasColumnName("Quantity").IsRequired();
             b.Property(x => x.UnitPrice).HasColumnName("UnitPrice").HasPrecision(18, 2).IsRequired();
-            b.Property(x => x.DiscountPercent).HasColumnName("DiscountPercent").HasPrecision(5, 4);
+           
+            b.Property(x => x.DiscountPercent)
+             .HasColumnName("DiscountPercent")
+             .HasPrecision(5, 2)     // garante numeric(5,2)
+             .HasDefaultValue(0m)    // default 0 no banco
+             .IsRequired();
 
-            
-            b.HasOne(si => si.Sale)
+
+            // se DiscountPercent for calculado no getter, ignore:
+            // b.Ignore(x => x.DiscountPercent);
+            // b.Ignore(x => x.Total);
+
+            b.HasOne<Sale>()                             // << aqui
              .WithMany(s => s.Items)
              .HasForeignKey(si => si.SaleId)
              .OnDelete(DeleteBehavior.Cascade)
              .HasConstraintName("fk_saleitems_sales");
         }
+
     }
 
 }
