@@ -16,6 +16,7 @@ using Ambev.DeveloperEvaluation.WebApi.Features.Sales.Requests;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.Responses;
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CreateSaleRequest = Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale.CreateSaleRequest;
 
@@ -24,6 +25,8 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales;
 /// <summary>
 /// Controller for sales operations
 /// </summary>
+/// 
+//[Authorize] Implementar apenas se necessário
 [ApiController]
 [Route("api/[controller]")]
 public class SalesController : BaseController
@@ -104,7 +107,7 @@ public class SalesController : BaseController
     {
         var res = await _mediator.Send(new ListSalesQuery(number, customer, dateFrom, dateTo, page, pageSize), ct);
         var dto = _mapper.Map<ListSalesResponse>(res);
-        return dto; // ✅ retorna T -> 200 OK com o corpo
+        return dto; 
     }
 
 
