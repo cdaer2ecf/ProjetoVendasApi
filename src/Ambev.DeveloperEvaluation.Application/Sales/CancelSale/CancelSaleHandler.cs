@@ -1,4 +1,6 @@
-﻿using Ambev.DeveloperEvaluation.ORM;
+﻿using Ambev.DeveloperEvaluation.Application.Common;
+using Ambev.DeveloperEvaluation.Domain.Events;
+using Ambev.DeveloperEvaluation.ORM;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +9,13 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.CancelSale
     public sealed class CancelSaleHandler : IRequestHandler<CancelSaleCommand, bool>
     {
         private readonly DefaultContext _db;
-        public CancelSaleHandler(DefaultContext db) => _db = db;
+        private readonly IEventPublisher _eventPublisher;
+
+        public CancelSaleHandler(DefaultContext db, IEventPublisher eventPublisher)
+        {
+            _db = db;
+            _eventPublisher = eventPublisher;
+        }
 
         public async Task<bool> Handle(CancelSaleCommand request, CancellationToken ct)
         {
@@ -18,6 +26,9 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.CancelSale
 
             sale.Cancel();
             await _db.SaveChangesAsync(ct);
+
+            await _eventPublisher.Publish(new SaleCancelledEvent(sale.Id, DateTime.UtcNow));
+
             return true;
         }
     }

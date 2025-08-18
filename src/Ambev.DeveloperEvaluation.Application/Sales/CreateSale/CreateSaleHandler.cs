@@ -1,4 +1,6 @@
-﻿using Ambev.DeveloperEvaluation.Domain.Entities;
+﻿using Ambev.DeveloperEvaluation.Application.Common;
+using Ambev.DeveloperEvaluation.Domain.Entities;
+using Ambev.DeveloperEvaluation.Domain.Events;
 using Ambev.DeveloperEvaluation.ORM;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +10,13 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.CreateSale
     public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, CreateSaleResult>
     {
         private readonly DefaultContext _db;
-        public CreateSaleHandler(DefaultContext db) => _db = db;
+        private readonly IEventPublisher _eventPublisher;
+
+        public CreateSaleHandler(DefaultContext db, IEventPublisher eventPublisher)
+        {
+            _db = db;
+            _eventPublisher = eventPublisher;
+        }
 
         public async Task<CreateSaleResult> Handle(CreateSaleCommand request, CancellationToken ct)
         {
@@ -32,6 +40,8 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.CreateSale
 
             await _db.Set<Sale>().AddAsync(sale, ct);
             await _db.SaveChangesAsync(ct);
+
+            await _eventPublisher.Publish(new SaleCreatedEvent(sale.Id, DateTime.UtcNow));
 
             return new CreateSaleResult
             {
